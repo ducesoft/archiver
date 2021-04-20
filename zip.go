@@ -85,6 +85,15 @@ type Zip struct {
 	zr         *zip.Reader
 	ridx       int
 	//decinitialized bool
+
+	// features
+	filter func(path string, info os.FileInfo) bool
+}
+
+func (*Zip) Filter(filter func(path string, info os.FileInfo) bool) Archiver {
+	delegate := NewZip()
+	delegate.filter = filter
+	return delegate
 }
 
 // CheckExt ensures the file extension matches the format.
@@ -308,6 +317,9 @@ func (z *Zip) writeWalk(source, topLevelFolder, destination string) error {
 	}
 
 	return filepath.Walk(source, func(fpath string, info os.FileInfo, err error) error {
+		if nil != z.filter && !z.filter(fpath, info) {
+			return nil
+		}
 		handleErr := func(err error) error {
 			if z.ContinueOnError {
 				log.Printf("[ERROR] Walking %s: %v", fpath, err)

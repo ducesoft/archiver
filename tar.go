@@ -55,6 +55,15 @@ type Tar struct {
 	readerWrapFn  func(io.Reader) (io.Reader, error)
 	writerWrapFn  func(io.Writer) (io.Writer, error)
 	cleanupWrapFn func()
+
+	// features
+	filter func(path string, info os.FileInfo) bool
+}
+
+func (*Tar) Filter(filter func(path string, info os.FileInfo) bool) Archiver {
+	delegate := NewZip()
+	delegate.filter = filter
+	return delegate
 }
 
 // CheckExt ensures the file extension matches the format.
@@ -286,6 +295,9 @@ func (t *Tar) writeWalk(source, topLevelFolder, destination string) error {
 	}
 
 	return filepath.Walk(source, func(fpath string, info os.FileInfo, err error) error {
+		if nil != t.filter && !t.filter(fpath, info) {
+			return nil
+		}
 		handleErr := func(err error) error {
 			if t.ContinueOnError {
 				log.Printf("[ERROR] Walking %s: %v", fpath, err)

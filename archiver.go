@@ -54,9 +54,16 @@ import (
 	"strings"
 )
 
+// Feature is extension of standard implement
+type Feature interface {
+	// Filter is Archive with Filter ignore feature
+	Filter(filter func(path string, info os.FileInfo) bool) Archiver
+}
+
 // Archiver is a type that can create an archive file
 // from a list of source file names.
 type Archiver interface {
+	Feature
 	ExtensionChecker
 
 	// Archive adds all the files or folders in sources
